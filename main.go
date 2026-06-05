@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strconv"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -9,11 +10,14 @@ import (
 type model struct {
 	choices []string
 	cursor  int
+	count   int
+	fs      bool
 }
 
 func initialModel() model {
 	return model{
 		choices: []string{"Search", "Add request", "Add query"},
+		fs:      false,
 	}
 }
 
@@ -22,6 +26,7 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.count++
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -30,6 +35,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "q":
 			return m, tea.Quit
+		case "f":
+			m.fs = !m.fs
+			return m, nil
 		default:
 			m.cursor = 2
 			return m, nil
@@ -41,6 +49,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	s := "Request-Query Lookup"
+	s += ": " + strconv.Itoa(m.count)
+
+	for _, item := range m.choices {
+		s += "\n" + item
+	}
 
 	switch m.cursor {
 	case 1:
@@ -49,7 +62,11 @@ func (m model) View() tea.View {
 		s += "\n\nDont know what happened dude"
 	}
 
-	return tea.NewView(s)
+	v := tea.NewView(s)
+	if m.fs {
+		v.AltScreen = true
+	}
+	return v
 }
 
 func main() {
