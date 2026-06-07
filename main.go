@@ -38,11 +38,11 @@ type Model struct {
 func initialModel() Model {
 	s := new(styles)
 	s.window = lipgloss.NewStyle().Padding(2).Align(lipgloss.Center).Background(lipgloss.Color("1"))
-	s.overlay = lipgloss.NewStyle().Padding(2).Width(20).Height(5)
+	s.overlay = lipgloss.NewStyle().Padding(2).Width(100).Height(5)
 	textInput := textinput.New()
 	textInput.Placeholder = "Busca"
 	textInput.Focus()
-	textInput.SetWidth(20)
+	textInput.SetWidth(100)
 
 	return Model{
 		panels:        []string{"Rest Client", "SQL Client"},
@@ -180,7 +180,7 @@ func (m Model) View() tea.View {
 	log.Printf("busca ativa: %t\n", m.searchActive)
 	if m.searchActive {
 		overlay := m.styles.overlay.Render(m.textInput.View())
-		overlayLayer := lipgloss.NewLayer(overlay).X(m.width / 2).Y(m.height / 2).Z(1)
+		overlayLayer := lipgloss.NewLayer(overlay).X((m.width / 2) - lipgloss.Width(overlay)/2).Y(m.height / 2).Z(1)
 		windowLayer.AddLayers(overlayLayer)
 	}
 
