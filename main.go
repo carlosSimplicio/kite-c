@@ -37,7 +37,12 @@ type Model struct {
 
 func initialModel() Model {
 	s := new(styles)
-	s.window = lipgloss.NewStyle().Padding(2).Align(lipgloss.Center).Background(lipgloss.Color("1"))
+	s.window = lipgloss.NewStyle().
+		Padding(2).
+		Align(lipgloss.Center).
+		Background(lipgloss.Color("#141A24")).
+		Border(lipgloss.ThickBorder()).
+		BorderBackground(lipgloss.Color("#141A24")).BorderForeground(lipgloss.Color("#8A2BE2"))
 	s.overlay = lipgloss.NewStyle().Padding(2).Width(100).Height(5)
 	textInput := textinput.New()
 	textInput.Placeholder = "Busca"
@@ -45,8 +50,8 @@ func initialModel() Model {
 	textInput.SetWidth(100)
 
 	return Model{
-		panels:        []string{"Rest Client", "SQL Client"},
-		selectedPanel: "Rest Client",
+		panels:        []string{"Rest Mode", "SQL Mode"},
+		selectedPanel: "Rest Mode",
 		searchActive:  false,
 		styles:        s,
 		textInput:     textInput,
@@ -114,7 +119,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchString = m.textInput.Value()
 			m.textInput.Reset()
 			return m, nil
-		case "ctrl+q":
+		case "ctrl+q", "ctrl+c":
 			return m, tea.Quit
 		case "g":
 			if !m.searchActive {
