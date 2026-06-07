@@ -1,13 +1,13 @@
-module rq-lookup
+module kite-c
 
 go 1.26.4
 
-require charm.land/bubbletea/v2 v2.0.7
-
 require (
-	charm.land/bubbles/v2 v2.1.0 // indirect
-	github.com/atotto/clipboard v0.1.4 // indirect
+	charm.land/bubbles/v2 v2.1.0
+	charm.land/bubbletea/v2 v2.0.7
 )
+
+require github.com/atotto/clipboard v0.1.4 // indirect
 
 require (
 	charm.land/lipgloss/v2 v2.0.3
