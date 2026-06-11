@@ -19,6 +19,7 @@ type WindowModel struct {
 	width          int
 	height         int
 	commandPallete CommandPalleteModel
+	restModeWindow RestWindowModel
 }
 
 func NewWindowModel() WindowModel {
@@ -35,6 +36,7 @@ func NewWindowModel() WindowModel {
 		selectedPanel:  "Rest Mode",
 		styles:         s,
 		commandPallete: NewCommandPalleteModel(),
+		restModeWindow: NewRestWindowModel(),
 	}
 }
 
@@ -95,6 +97,11 @@ func (m WindowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
+	m.restModeWindow, cmd = m.restModeWindow.Update(msg)
+	if cmd != nil {
+		return m, cmd
+	}
+
 	return m, nil
 }
 
@@ -103,7 +110,14 @@ func (m WindowModel) View() tea.View {
 	s.WriteString("Kite Client")
 	s.WriteString("\n")
 
-	s.WriteString(m.selectedPanel)
+	var modeWindow string
+	if m.selectedPanel == "Rest Mode" {
+		modeWindow = m.restModeWindow.View()
+	} else {
+		modeWindow = "SQL Mode"
+	}
+
+	s.WriteString(modeWindow)
 	s.WriteString("\n")
 
 	if m.commandPallete.SearchString != "" {
@@ -116,7 +130,6 @@ func (m WindowModel) View() tea.View {
 	windowLayer := lipgloss.NewLayer(window)
 
 	commandPalleteView := m.commandPallete.View()
-	log.Printf("commandPalleteView: %s\n", commandPalleteView)
 	if commandPalleteView != "" {
 		overlayLayer := lipgloss.NewLayer(commandPalleteView).
 			X((m.width / 2) - lipgloss.Width(commandPalleteView)/2).
