@@ -11,17 +11,21 @@ import (
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"kite-c/services/rest"
 )
 
 type RestWindowModel struct {
 	inputTextArea    textarea.Model
 	responseTextArea textarea.Model
-	restMethod       string
+	restCommand      *services.ParsedRestCommand
 	restUrl          string
 	fetchResult      string
 
 	width  int
 	height int
+
+	httpClient *http.Client
 }
 
 func customPromptFunc(info textarea.PromptInfo) string {
@@ -56,6 +60,7 @@ func NewRestWindowModel() RestWindowModel {
 	return RestWindowModel{
 		inputTextArea:    ita,
 		responseTextArea: rta,
+		httpClient:       &http.Client{},
 	}
 
 }
@@ -70,15 +75,14 @@ type FetchResult struct {
 }
 
 func (m RestWindowModel) doRequest() tea.Msg {
-	client := &http.Client{}
-	req, err := http.NewRequest(m.restMethod, m.restUrl, nil)
+	req, err := http.NewRequest(string(m.restCommand.Method), m.restCommand.Url, nil)
 	if err != nil {
 		return FetchResult{
 			success: false,
 			data:    err.Error(),
 		}
 	}
-	resp, err := client.Do(req)
+	resp, err := m.httpClient.Do(req)
 	if err != nil {
 		return FetchResult{
 			success: false,
@@ -101,9 +105,12 @@ func (m RestWindowModel) doRequest() tea.Msg {
 }
 
 func (m *RestWindowModel) parseCommand(command string) {
-	splittedCommand := strings.Split(command, " ")
-	m.restMethod = splittedCommand[0]
-	m.restUrl = splittedCommand[1]
+	parsedCommand, err := services.ParseRestCommand(command)
+	if err != nil {
+		return
+	}
+
+	m.restCommand = parsedCommand
 }
 
 func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
