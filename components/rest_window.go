@@ -1,12 +1,16 @@
 package components
 
 import (
-	"charm.land/bubbles/v2/textarea"
-	tea "charm.land/bubbletea/v2"
 	"io"
 	"log"
+	"strconv"
+
 	"net/http"
 	"strings"
+
+	"charm.land/bubbles/v2/textarea"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type RestWindowModel struct {
@@ -15,18 +19,39 @@ type RestWindowModel struct {
 	restMethod       string
 	restUrl          string
 	fetchResult      string
+
+	width  int
+	height int
+}
+
+func customPromptFunc(info textarea.PromptInfo) string {
+	return (strconv.Itoa(info.LineNumber) + " ")
 }
 
 func NewRestWindowModel() RestWindowModel {
 	ita := textarea.New()
-	ita.ShowLineNumbers = false
 	ita.SetVirtualCursor(true)
-	// https://jsonplaceholder.typicode.com/todos
+	ita.ShowLineNumbers = false
+	ita.SetPromptFunc(4, customPromptFunc)
+	ita.SetWidth(60)
 	ita.SetValue("GET https://jsonplaceholder.typicode.com/todos")
 
+	itaStyle := textarea.StyleState{
+		Base: lipgloss.NewStyle().Background(lipgloss.Color("1")).BorderBackground(lipgloss.Color("2")),
+	}
+
+	ita.SetStyles(textarea.Styles{Focused: itaStyle, Blurred: itaStyle})
+
 	rta := textarea.New()
-	rta.ShowLineNumbers = false
 	rta.SetVirtualCursor(true)
+	rta.ShowLineNumbers = false
+	rta.SetPromptFunc(4, customPromptFunc)
+	rta.SetWidth(60)
+	rtaStyle := textarea.StyleState{
+		Base: lipgloss.NewStyle().Background(lipgloss.Color("2")),
+	}
+
+	rta.SetStyles(textarea.Styles{Focused: rtaStyle, Blurred: rtaStyle})
 
 	return RestWindowModel{
 		inputTextArea:    ita,
@@ -86,13 +111,20 @@ func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
 	log.Printf("update rest window: %v\n", msg)
 	log.Printf("msg type: %v\n", msg)
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
 	case tea.KeyPressMsg:
 		log.Println("detected key press msg")
 		switch msg.Key().String() {
 		case "ctrl+f":
+			m.responseTextArea.Blur()
 			m.inputTextArea.Focus()
 			return m, cmd
 		case "ctrl+r":
+			m.inputTextArea.Blur()
 			m.responseTextArea.Focus()
 			return m, cmd
 		case "ctrl+a":
@@ -100,16 +132,21 @@ func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
 			m.responseTextArea.Blur()
 			return m, cmd
 		case "alt+enter":
+			if !m.inputTextArea.Focused() {
+				break
+			}
 			m.inputTextArea.Blur()
 			m.responseTextArea.Blur()
 			m.parseCommand(m.inputTextArea.Value())
 			return m, m.doRequest
 		}
+
 	case FetchResult:
 		log.Println("detected fetch result msg")
 		log.Printf("fetch result: %v", msg)
 		m.fetchResult = msg.data
 		m.responseTextArea.SetValue(msg.data)
+		m.responseTextArea.MoveToBegin()
 		return m, cmd
 	}
 
@@ -126,15 +163,33 @@ func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
 
 func (m RestWindowModel) View() string {
 	header := "Rest Mode"
+	requestWindowTitle := "Request"
+	responseWindowTitle := "Response"
+
+	headerHeight := lipgloss.Height(header)
+	requestTitleHeight := lipgloss.Height(requestWindowTitle)
+	responseTitleHeight := lipgloss.Height(responseWindowTitle)
+	inputHeights := (m.height - headerHeight - requestTitleHeight - responseTitleHeight - 6) / 2
+
+	m.inputTextArea.SetHeight(inputHeights)
+	m.inputTextArea.SetWidth(m.width - 5)
+	m.responseTextArea.SetHeight(inputHeights)
+	m.responseTextArea.SetWidth(m.width - 5)
 
 	inputTextArea := m.inputTextArea.View()
 
-	m.responseTextArea.CursorStart()
 	responseTextArea := m.responseTextArea.View()
+	restWindowStyle := lipgloss.NewStyle().Width(m.width - 2)
 
-	return strings.Join([]string{
-		header,
-		inputTextArea,
-		responseTextArea,
-	}, "\n")
+	content := restWindowStyle.Render(
+		strings.Join([]string{
+			header,
+			"Request",
+			inputTextArea,
+			"Response",
+			responseTextArea,
+		}, "\n\n"),
+	)
+
+	return content
 }

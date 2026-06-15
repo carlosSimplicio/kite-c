@@ -25,7 +25,6 @@ type WindowModel struct {
 func NewWindowModel() WindowModel {
 	s := new(windowStyles)
 	s.window = lipgloss.NewStyle().
-		Padding(2).
 		Align(lipgloss.Center).
 		Background(lipgloss.Color("#141A24")).
 		Border(lipgloss.ThickBorder()).
@@ -72,6 +71,8 @@ func (m WindowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.styles.window = m.styles.window.Height(msg.Height)
 		m.width = msg.Width
 		m.height = msg.Height
+		m.restModeWindow, _ = m.restModeWindow.Update(msg)
+
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -107,8 +108,8 @@ func (m WindowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m WindowModel) View() tea.View {
 	var s strings.Builder
-	s.WriteString("Kite Client")
-	s.WriteString("\n")
+	// s.WriteString("Kite Client")
+	// s.WriteString("\n")
 
 	var modeWindow string
 	if m.selectedPanel == "Rest Mode" {
