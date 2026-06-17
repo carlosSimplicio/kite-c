@@ -3,6 +3,7 @@ package components
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	db "kite-c/database/sqlc"
 	"log"
 	"strconv"
 	"strings"
@@ -20,9 +21,10 @@ type WindowModel struct {
 	height         int
 	commandPallete CommandPalleteModel
 	restModeWindow RestWindowModel
+	repository     *db.Queries
 }
 
-func NewWindowModel() WindowModel {
+func NewWindowModel(repository *db.Queries) WindowModel {
 	s := new(windowStyles)
 	s.window = lipgloss.NewStyle().
 		Align(lipgloss.Center).
@@ -36,6 +38,7 @@ func NewWindowModel() WindowModel {
 		styles:         s,
 		commandPallete: NewCommandPalleteModel(),
 		restModeWindow: NewRestWindowModel(),
+		repository:     repository,
 	}
 }
 
