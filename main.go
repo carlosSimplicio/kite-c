@@ -1,15 +1,15 @@
 package main
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"context"
 	"database/sql"
 	_ "embed"
 	_ "github.com/mattn/go-sqlite3"
+	"kite-c/components"
+	commandRepository "kite-c/services/repository"
 	"log"
-	// "os"
-	// "kite-c/components"
-	"kite-c/database/sqlc"
-	// tea "charm.land/bubbletea/v2"
+	"os"
 )
 
 //go:embed database/schema.sql
@@ -35,34 +35,20 @@ func main() {
 		log.Fatalln("Failed to migrate", err.Error())
 	}
 
-	queries := db.New(dbClient)
-	cmd, err := queries.CreateCommand(ctx, db.CreateCommandParams{
-		Name: "Test",
-		Description: sql.NullString{
-			String: "This is a description",
-			Valid:  true,
-		},
-		CommandQuery: "Borboletinha",
-		TypeID:       1,
-	})
+	repository := commandRepository.NewCommandRepository(dbClient)
 
+	logOutputFile := "logs.txt"
+	file, err := os.OpenFile(logOutputFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatalln("Failed to create command", err.Error())
+		os.Exit(1)
 	}
-	log.Printf("Created command %v", cmd)
+	defer file.Close()
 
-	// logOutputFile := "logs.txt"
-	// file, err := os.OpenFile(logOutputFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	// if err != nil {
-	// 	os.Exit(1)
-	// }
-	// defer file.Close()
-	//
-	// log.SetOutput(file)
-	//
-	// p := tea.NewProgram(components.NewWindowModel(queries))
-	//
-	// if _, err := p.Run(); err != nil {
-	// 	log.Fatalf("Failed to run program %s", err.Error())
-	// }
+	log.SetOutput(file)
+
+	p := tea.NewProgram(components.NewWindowModel(repository))
+
+	if _, err := p.Run(); err != nil {
+		log.Fatalf("Failed to run program %s", err.Error())
+	}
 }

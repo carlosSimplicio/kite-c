@@ -8,7 +8,10 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.45
 )
 
-require github.com/atotto/clipboard v0.1.4 // indirect
+require (
+	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/sahilm/fuzzy v0.1.1 // indirect
+)
 
 require (
 	charm.land/lipgloss/v2 v2.0.3

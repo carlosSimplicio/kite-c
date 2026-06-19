@@ -3,7 +3,7 @@ package components
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	db "kite-c/database/sqlc"
+	commandRepository "kite-c/services/repository"
 	"log"
 	"strconv"
 	"strings"
@@ -21,10 +21,10 @@ type WindowModel struct {
 	height         int
 	commandPallete CommandPalleteModel
 	restModeWindow RestWindowModel
-	repository     *db.Queries
+	repository     *commandRepository.CommandRepository
 }
 
-func NewWindowModel(repository *db.Queries) WindowModel {
+func NewWindowModel(repository *commandRepository.CommandRepository) WindowModel {
 	s := new(windowStyles)
 	s.window = lipgloss.NewStyle().
 		Align(lipgloss.Center).
@@ -36,8 +36,8 @@ func NewWindowModel(repository *db.Queries) WindowModel {
 		panels:         []string{"Rest Mode", "SQL Mode"},
 		selectedPanel:  "Rest Mode",
 		styles:         s,
-		commandPallete: NewCommandPalleteModel(),
-		restModeWindow: NewRestWindowModel(),
+		commandPallete: NewCommandPalleteModel(repository),
+		restModeWindow: NewRestWindowModel(repository),
 		repository:     repository,
 	}
 }
@@ -111,8 +111,8 @@ func (m WindowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m WindowModel) View() tea.View {
 	var s strings.Builder
-	// s.WriteString("Kite Client")
-	// s.WriteString("\n")
+	s.WriteString("Kite Client")
+	s.WriteString("\n")
 
 	var modeWindow string
 	if m.selectedPanel == "Rest Mode" {
@@ -137,7 +137,7 @@ func (m WindowModel) View() tea.View {
 	if commandPalleteView != "" {
 		overlayLayer := lipgloss.NewLayer(commandPalleteView).
 			X((m.width / 2) - lipgloss.Width(commandPalleteView)/2).
-			Y(m.height / 2).Z(1)
+			Y(m.height / 4).Z(1)
 		windowLayer.AddLayers(overlayLayer)
 	}
 

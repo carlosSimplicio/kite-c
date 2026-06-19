@@ -1,6 +1,8 @@
 package components
 
 import (
+	"context"
+	"database/sql"
 	"io"
 	"log"
 	"strconv"
@@ -12,8 +14,12 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	db "kite-c/database/sqlc"
+	commandRepository "kite-c/services/repository"
 	"kite-c/services/rest"
 )
+
+const REST_COMMAND_TYPE_ID int64 = 1
 
 type RestWindowModel struct {
 	inputTextArea    textarea.Model
@@ -26,13 +32,14 @@ type RestWindowModel struct {
 	height int
 
 	httpClient *http.Client
+	repository *commandRepository.CommandRepository
 }
 
 func customPromptFunc(info textarea.PromptInfo) string {
 	return (strconv.Itoa(info.LineNumber) + " ")
 }
 
-func NewRestWindowModel() RestWindowModel {
+func NewRestWindowModel(repository *commandRepository.CommandRepository) RestWindowModel {
 	ita := textarea.New()
 	ita.SetVirtualCursor(true)
 	ita.ShowLineNumbers = false
@@ -61,6 +68,7 @@ func NewRestWindowModel() RestWindowModel {
 		inputTextArea:    ita,
 		responseTextArea: rta,
 		httpClient:       &http.Client{},
+		repository:       repository,
 	}
 
 }
@@ -113,6 +121,27 @@ func (m *RestWindowModel) parseCommand(command string) {
 	m.restCommand = parsedCommand
 }
 
+func (m *RestWindowModel) saveCommand() tea.Msg {
+	log.Println("Trying to save command")
+	cmd, err := m.repository.CreateCommand(context.TODO(), db.CreateCommandParams{
+		Name: "This is a name for a test",
+		Description: sql.NullString{
+			String: "This is a description for a test",
+			Valid:  true,
+		},
+		CommandQuery: m.inputTextArea.Value(),
+		TypeID:       REST_COMMAND_TYPE_ID,
+	})
+
+	if err != nil {
+		log.Printf("Failed to save command: %s\n", err.Error())
+		return nil
+	}
+	log.Printf("Created command: %v\n", cmd)
+
+	return nil
+}
+
 func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
 	var cmd tea.Cmd
 	log.Printf("update rest window: %v\n", msg)
@@ -138,6 +167,8 @@ func (m RestWindowModel) Update(msg tea.Msg) (RestWindowModel, tea.Cmd) {
 			m.inputTextArea.Blur()
 			m.responseTextArea.Blur()
 			return m, cmd
+		case "ctrl+s":
+			return m, m.saveCommand
 		case "alt+enter":
 			if !m.inputTextArea.Focused() {
 				break
